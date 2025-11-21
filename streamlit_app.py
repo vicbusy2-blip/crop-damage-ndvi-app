@@ -24,63 +24,59 @@ uploaded_gpkg = st.file_uploader(
 )
 
 if uploaded_gpkg:
-    # Write uploaded .gpkg into a temporary file
+    import tempfile
+    import os
+    import json
+    from shapely.geometry import mapping, shape
+
     tmpdir = tempfile.mkdtemp()
     gpkg_path = os.path.join(tmpdir, uploaded_gpkg.name)
 
     with open(gpkg_path, "wb") as f:
         f.write(uploaded_gpkg.getvalue())
 
-    # Read GPKG
-    try:
-        gdf = gpd.read_file(gpkg_path)
+    # Load GeoPackage
+    gdf = gpd.read_file(gpkg_path)
 
-        # Fix geometry: convert 3D → 2D
-        def fix_geom(g):
-            if g is None:
-                return None
-            try:
-                # If geometry has Z, strip to XY
-                if hasattr(g, "has_z") and g.has_z:
-                    coords = [(x, y) for x, y, *_ in g.coords]
-                    return type(g)(coords)
-                else:
-                    return g
-            except:
-                # For polygons/multipolygons
-                return shape(mapping(g))
+    # Fix 3D → 2D
+    def fix_geom(g):
+        if g is None:
+            return None
+        try:
+            if hasattr(g, "has_z") and g.has_z:
+                coords = [(x, y) for x, y, *_ in g.coords]
+                return type(g)(coords)
+            return g
+        except:
+            return shape(mapping(g))
 
-        gdf["geometry"] = gdf["geometry"].apply(fix_geom)
+    gdf["geometry"] = gdf["geometry"].apply(fix_geom)
 
-        # Convert CRS → WGS84
-        if gdf.crs is None:
-            st.warning("No CRS found → assuming EPSG:4326")
-            gdf = gdf.set_crs(4326)
-        else:
-            gdf = gdf.to_crs(4326)
+    # Reproject to WGS84
+    if gdf.crs is None:
+        gdf = gdf.set_crs(4326)
+    else:
+        gdf = gdf.to_crs(4326)
 
-    except Exception as e:
-        st.error(f"Failed to read GPKG: {e}")
-        st.stop()
+    # FIX: Convert all timestamps to strings
+    gdf = gdf.applymap(
+        lambda x: x.isoformat() if hasattr(x, "isoformat") else x
+    )
 
-    st.success(f"Loaded {len(gdf)} polygons!")
-
-    # Convert GeoDataFrame → clean GeoJSON
+    # Convert to valid GeoJSON
     geojson = json.loads(gdf.to_json())
 
-    # Build map
+    # Create map
+    centroid = gdf.geometry.centroid
     m = folium.Map(
-        location=[
-            gdf.geometry.centroid.y.mean(),
-            gdf.geometry.centroid.x.mean()
-        ],
+        location=[centroid.y.mean(), centroid.x.mean()], 
         zoom_start=12
     )
 
     folium.GeoJson(
         geojson,
-        name="Uploaded GPKG",
+        name="Uploaded Polygons",
         tooltip=folium.GeoJsonTooltip(fields=[gdf.columns[0]])
     ).add_to(m)
 
-    st_map = st_folium(m, height=600, width=700)
+    st_folium(m, height=600, width=700)
