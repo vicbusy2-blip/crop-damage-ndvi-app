@@ -1,0 +1,13 @@
+streamlit
+geemap
+earthengine-api
+folium
+geopandas
+shapely
+pyproj
+fiona
+rasterio
+matplotlib
+pandas
+numpy
+requests
