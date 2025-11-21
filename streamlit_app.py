@@ -9,7 +9,7 @@ import os
 # -------------------------------
 # STREAMLIT UI
 # -------------------------------
-st.set_page_config(page_title="Crop Damage NDVI App", layout="wide")
+st.set_page_config(page_title="NDVI-based Crop Damage App", layout="wide")
 
 st.title("🌾 Crop Damage NDVI Assessment App")
 st.write("Upload polygon file (GeoPackage) and compute NDVI-based crop loss.")
