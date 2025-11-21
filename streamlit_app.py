@@ -11,7 +11,7 @@ import os
 # -------------------------------
 st.set_page_config(page_title="NDVI-based Crop Damage App", layout="wide")
 
-st.title("🌾 Crop Damage NDVI Assessment App")
+st.title("🌾 NDVI-based Crop Damage App")
 st.write("Upload polygon file (GeoPackage) and compute NDVI-based crop loss.")
 
 # -------------------------------
