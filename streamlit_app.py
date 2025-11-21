@@ -22,7 +22,6 @@ from io import BytesIO
 import base64
 
 import streamlit as st
-from streamlit import caching
 
 import geopandas as gpd
 import pandas as pd
