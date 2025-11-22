@@ -134,29 +134,44 @@ def convert_3d_to_2d_geojson(geojson_obj):
     return geojson_obj
 
 # ---------------------------
-# EE auth block
+# EE auth block — works on Streamlit Cloud
 # ---------------------------
-st.header("Earth Engine authentication")
-ee_auth_col, ee_info_col = st.columns([2,3])
+import streamlit as st
+import ee
+import json
+import requests
 
-with ee_auth_col:
-    if st.button("Authenticate Earth Engine"):
-        try:
-            ee.Authenticate()   # interactive flow
-            ee.Initialize()
-            st.success("Earth Engine authenticated and initialized.")
-        except Exception as e:
-            st.error(f"EE authenticate failed: {e}")
+refresh_token = st.secrets["EE_REFRESH_TOKEN"]
+project_id = st.secrets["EE_PROJECT"]
 
-# Show status
-try:
-    ee.Initialize()
-    ee_user = ee.data.getAssetRoots()  # quick call to ensure initialized
-    ee_info_col.success("Earth Engine: initialized")
-except Exception as e:
-    ee_info_col.warning("Earth Engine not initialized. Click Authenticate and follow the OAuth flow.")
+# 1. Exchange refresh token for access token
+token_url = "https://oauth2.googleapis.com/token"
+payload = {
+    "client_id": "32555940559.apps.googleusercontent.com",
+    "client_secret": "ZmssLNjJy2998hD4CTg2ejr2",
+    "refresh_token": refresh_token,
+    "grant_type": "refresh_token"
+}
 
-st.markdown("---")
+response = requests.post(token_url, data=payload)
+access_token = response.json().get("access_token")
+
+if not access_token:
+    st.error("Failed to get Google OAuth access token.")
+else:
+    # 2. Build EE Credentials
+    creds = ee.oauth.OAuthCredentials(
+        client_id="32555940559.apps.googleusercontent.com",
+        token=access_token,
+        scopes=["https://www.googleapis.com/auth/earthengine"],
+        token_uri="https://oauth2.googleapis.com/token",
+        quota_project_id=project_id
+    )
+
+    # 3. Initialize Earth Engine
+    ee.Initialize(creds, project=project_id)
+
+    st.success("Earth Engine authenticated successfully!")
 
 # ---------------------------
 # File upload: geopackage
