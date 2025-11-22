@@ -136,11 +136,6 @@ def convert_3d_to_2d_geojson(geojson_obj):
 # ---------------------------
 # EE auth block — works on Streamlit Cloud
 # ---------------------------
-import streamlit as st
-import ee
-import json
-import requests
-
 refresh_token = st.secrets["EE_REFRESH_TOKEN"]
 project_id = st.secrets["EE_PROJECT"]
 
@@ -168,10 +163,10 @@ else:
         quota_project_id=project_id
     )
 
-    # 3. Initialize Earth Engine
-    ee.Initialize(creds, project=project_id)
+ # 3. Initialize Earth Engine
+ ee.Initialize(creds, project=project_id)
 
-    st.success("Earth Engine authenticated successfully!")
+ st.success("Earth Engine authenticated successfully!")
 
 # ---------------------------
 # File upload: geopackage
